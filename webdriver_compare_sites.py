@@ -45,13 +45,13 @@ def _status_string(pdict):
     """ generate status string for a path dict """
     s = ""
     if pdict['seen'] is True:
-        s = s + "s"
+        s += "s"
     if pdict['review'] is True:
-        s = s + "r"
+        s += "r"
     if pdict['markup'] is True:
-        s = s + "m"
+        s += "m"
     if pdict['note'] != "":
-        s = s + ", note: " + pdict['note']
+        s = f"{s}, note: " + pdict['note']
     return s
 
 def check_path(path, pdict, old, new, browser, windows, newonly=False):
@@ -59,11 +59,8 @@ def check_path(path, pdict, old, new, browser, windows, newonly=False):
     Interactively check a path
     """
     pdict['seen'] = True
-    print("Previous Status: %s" % _status_string(pdict))
-    if newonly:
-        one = None
-    else:
-        one = old + path
+    print(f"Previous Status: {_status_string(pdict)}")
+    one = None if newonly else old + path
     two = new + path
     loadPages(browser, windows, one, two)
     # prompt for status
@@ -86,7 +83,7 @@ def check_path(path, pdict, old, new, browser, windows, newonly=False):
             pdict['note'] = note
     elif resp == 's':
         pdict['seen'] = False
-    print("New Status: %s" % _status_string(pdict))
+    print(f"New Status: {_status_string(pdict)}")
     return pdict
 
 def get_all_paths(dname):
@@ -105,7 +102,7 @@ def get_all_paths(dname):
                 path = os.path.join(root, f)
                 if path.startswith(dname):
                     path = path[len(dname):]
-                path = os.path.dirname(path) + '/'
+                path = f'{os.path.dirname(path)}/'
                 path = re.sub('/+', '/', path)
                 paths.append(path)
     return paths
@@ -114,11 +111,8 @@ def make_path_dict(paths):
     """
     Make a path_dict with the right keys
     """
-    pdict = {}
     elem = {'seen': False, 'review': False, 'note': "", 'markup': False}
-    for p in paths:
-        pdict[p] = elem
-    return pdict
+    return {p: elem for p in paths}
 
 def print_report(json_path, url_base):
     """
@@ -137,7 +131,7 @@ def print_report(json_path, url_base):
             s = " review"
             review = review + 1
         if j[path]['markup'] is True:
-            s = s + " markup"
+            s += " markup"
             markup = markup + 1
         if s != "":
             print("%s\t%s%s" % (s, url_base, path))
@@ -202,7 +196,7 @@ def main():
 
     if opts.report:
         if not os.path.exists(opts.savefile):
-            sys.stderr.write("ERROR: savefile %s does not exist." % opts.savefile)
+            sys.stderr.write(f"ERROR: savefile {opts.savefile} does not exist.")
             sys.exit(1)
         print_report(opts.savefile, opts.new)
         sys.exit(0)
@@ -244,10 +238,10 @@ def main():
         if path_dict[p]['review'] is False and path_dict[p]['markup'] is False and opts.revisit is True:
             continue
         if path_dict[p]['review'] is True or path_dict[p]['markup'] is True:
-            print("Reopening %s for review" % p)
+            print(f"Reopening {p} for review")
             if path_dict[p]['note'] != "":
                 print("\tPrevious Note: %s" % path_dict[p]['note'])
-        print("Checking: %s" % p)
+        print(f"Checking: {p}")
         path_dict[p] = check_path(p, path_dict[p], opts.old, opts.new, browser, windows, newonly=opts.newonly)
         # write the JSON out and flush
         with open(opts.savefile, "w") as fh:

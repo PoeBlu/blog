@@ -69,10 +69,10 @@ def disqusify_wp_xml(infile, outfile, verbose=False):
         item_count = item_count + 1
         if len(element.findall("wp:comment", namespaces=namespaces)) < 1:
             if verbose:
-                print("Skipping post with no comments: guid=%s name=%s" % (guid, name))
+                print(f"Skipping post with no comments: guid={guid} name={name}")
             continue
         item_withcomm_count = item_withcomm_count + 1
-        print("Found post with comments: guid=%s name=%s" % (guid, name))
+        print(f"Found post with comments: guid={guid} name={name}")
         identifier = etree.Element('{http://www.disqus.com/}thread_identifier')
         identifier.text = name
         element.append(identifier)
@@ -81,7 +81,7 @@ def disqusify_wp_xml(infile, outfile, verbose=False):
     ser = etree.tostring(root, xml_declaration=True, pretty_print=True)
     with open(outfile, 'w') as fh:
         fh.write(ser)
-    print("Output written to: %s" % outfile)
+    print(f"Output written to: {outfile}")
     return True
 
 def parse_options(argv):

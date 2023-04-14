@@ -126,7 +126,9 @@ _shariff_svcs = [
     'linkedin',
     'diaspora'
 ]
-SHARIFF_SERVICES = '[' + ','.join(['&quot;%s&quot;' % x for x in _shariff_svcs]) + ']'
+SHARIFF_SERVICES = (
+    '[' + ','.join([f'&quot;{x}&quot;' for x in _shariff_svcs]) + ']'
+)
 SHARIFF_THEME = 'standard'
 
 # disable tags, since it's a list not a "cloud"

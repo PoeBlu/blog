@@ -33,48 +33,56 @@ def prebuild():
     """ tasks to run before any file generation - build, preview, publish, etc. """
     # check for themes
     if not os.path.exists(THEME):
-        print("ERROR: theme directory %s does not exist." % THEME)
+        print(f"ERROR: theme directory {THEME} does not exist.")
         sys.exit(1)
-    branch = local("cd %s && git rev-parse --abbrev-ref HEAD" % THEME, capture=True).strip()
+    branch = local(
+        f"cd {THEME} && git rev-parse --abbrev-ref HEAD", capture=True
+    ).strip()
     if branch != THEME_BRANCH:
-        print("ERROR: %s is on wrong branch (%s not %s)" % (THEME, branch, THEME_BRANCH))
+        print(f"ERROR: {THEME} is on wrong branch ({branch} not {THEME_BRANCH})")
         sys.exit(1)
     # check for plugins
     if not os.path.exists(os.path.join(PLUGIN_PATHS[0], 'LICENSE')):
-        print("ERROR: plugin directory %s does not exist." % PLUGIN_PATHS[0])
+        print(f"ERROR: plugin directory {PLUGIN_PATHS[0]} does not exist.")
         sys.exit(1)
-    branch = local("cd %s && git rev-parse --abbrev-ref HEAD" % PLUGIN_PATHS[0], capture=True).strip()
+    branch = local(
+        f"cd {PLUGIN_PATHS[0]} && git rev-parse --abbrev-ref HEAD",
+        capture=True,
+    ).strip()
     if branch != PLUGIN_BRANCH:
-        print("ERROR: %s is on wrong branch (%s not %s)" % (PLUGIN_PATHS[0], branch, PLUGIN_BRANCH))
+        print(
+            f"ERROR: {PLUGIN_PATHS[0]} is on wrong branch ({branch} not {PLUGIN_BRANCH})"
+        )
         sys.exit(1)
     cats = _get_categories()
     mitems = [x[0] for x in MENUITEMS]
-    missing = [i for i in cats if i not in mitems]
-    if len(missing) > 0:
+    if missing := [i for i in cats if i not in mitems]:
         raise RuntimeError(
-            'Categories missing from MENUITEMS in pelicanconf.py: %s' % missing
+            f'Categories missing from MENUITEMS in pelicanconf.py: {missing}'
         )
     update_pinned_repos()
 
 def update_pinned_repos():
     """Update github_pinned_repos.json from user's GitHub profile"""
-    if not os.path.exists('github_pinned_repos.json'):
-        fage = 999999999
-    else:
-        fage = time.time() - os.stat('github_pinned_repos.json')[stat.ST_MTIME]
+    fage = (
+        time.time() - os.stat('github_pinned_repos.json')[stat.ST_MTIME]
+        if os.path.exists('github_pinned_repos.json')
+        else 999999999
+    )
     if fage < 86400:
         print("GitHub Pinned Repos updated %d seconds ago; not regenerating" % fage)
         return True
-    print("Updating GitHub Pinned Repos for user %s" % GITHUB_USER)
-    result = []
-    r = requests.get('https://github.com/%s' % GITHUB_USER)
+    print(f"Updating GitHub Pinned Repos for user {GITHUB_USER}")
+    r = requests.get(f'https://github.com/{GITHUB_USER}')
     soup = BeautifulSoup(r.text, 'html.parser')
-    for li in soup.select('li.pinned-item-list-item'):
-        result.append({
+    result = [
+        {
             'name': li.select('.repo')[0].string.strip(),
-            'html_url': 'https://github.com%s' % li.select('.repo')[0].parent.attrs['href'].strip(),
-            'description': li.select('.pinned-item-desc')[0].string.strip()
-        })
+            'html_url': f"https://github.com{li.select('.repo')[0].parent.attrs['href'].strip()}",
+            'description': li.select('.pinned-item-desc')[0].string.strip(),
+        }
+        for li in soup.select('li.pinned-item-list-item')
+    ]
     res = json.dumps(result)
     resp = prompt("New pinned repos:\n%s\nIs this right? [yes|No]" % pformat(result))
     if not re.match(r'(y|Y|yes|Yes|YES)', resp):
@@ -124,7 +132,7 @@ def publish():
         return False
     clean()
     preview()
-    local("ghp-import %s" % OUTPUT_PATH)
+    local(f"ghp-import {OUTPUT_PATH}")
     local("git push origin gh-pages")
 
 def _make_slug(title):
@@ -140,8 +148,8 @@ def _prompt_title():
     while not re.match(r'(y|Y|yes|Yes|YES)', confirm):
         title = prompt("Post Title:")
         print("")
-        print("Post Title: '%s'" % title)
-        print("Slug: '%s'" % _make_slug(title))
+        print(f"Post Title: '{title}'")
+        print(f"Slug: '{_make_slug(title)}'")
         print("")
         confirm = prompt("Is this correct? [y|N]", default='no')
     return title
@@ -167,7 +175,7 @@ def _prompt_category(cats):
             else:
                 print("Invalid number.")
                 continue
-        print("Category: '%s'" % category)
+        print(f"Category: '{category}'")
         print("")
         confirm = prompt("Is this correct? [y|N]", default='no')
     return category
@@ -182,7 +190,7 @@ def post():
     if not os.path.exists(dname):
         os.makedirs(dname)
     slug = _make_slug(title)
-    fname = "%s.md" % slug
+    fname = f"{slug}.md"
     fpath = os.path.join(dname, fname)
     datestr = dt.strftime('%Y-%m-%d %H:%M')
     metadata = """Title: {title}
@@ -208,23 +216,24 @@ Status: draft
         fh.flush()
         os.fsync(fh.fileno())
     if os.environ.get('EDITOR') is None:
-        print("EDITOR not defined. Your post is started at: %s" % fpath)
+        print(f"EDITOR not defined. Your post is started at: {fpath}")
     else:
         editor = os.environ.get('EDITOR')
-        print("Replacing fab process with: %s %s" % (editor, os.path.abspath(fpath)))
+        print(f"Replacing fab process with: {editor} {os.path.abspath(fpath)}")
         # replace our process with the editor...
         os.execlp(editor, os.path.basename(editor), os.path.abspath(fpath))
 
 def _get_categories():
     """ return a list of all categories in current posts """
-    lines = local('grep -rh "^Category: " %s/ | sort | uniq' % ARTICLE_PATHS[0], capture=True)
+    lines = local(
+        f'grep -rh "^Category: " {ARTICLE_PATHS[0]}/ | sort | uniq',
+        capture=True,
+    )
     cats = []
     cat_re = re.compile(r'^Category: (.+)$')
     for l in str(lines).split("\n"):
-        m = cat_re.match(l)
-        if not m:
-            continue
-        cats.append(m.group(1))
+        if m := cat_re.match(l):
+            cats.append(m[1])
     return cats
 
 def categories():

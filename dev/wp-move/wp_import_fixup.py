@@ -23,6 +23,7 @@ REQUIREMENTS:
 
 """
 
+
 import os
 import sys
 import re
@@ -35,50 +36,54 @@ files = sys.argv[1:]
 translation of GeSHi identifiers to Pygments identifiers,
 for GeSHi identifiers not supported by Pygments
 """
-overrides = {'none': 'text', 'lisp': 'common-lisp', 'html4strict': 'html'}
-overrides['xorg'] = 'text'
-overrides['nagios'] = 'text'
-
+overrides = {
+    'none': 'text',
+    'lisp': 'common-lisp',
+    'html4strict': 'html',
+    'xorg': 'text',
+    'nagios': 'text',
+}
 """
 Mapping of WP categories to new blog categories, for any that change.
 """
-categories = {}
-categories['android'] = 'Miscellaneous'
-categories['EMS, Non-Technical Commentary'] = 'Miscellaneous'
-categories['EMS, Personal'] = 'Miscellaneous'
-categories['EMS, Projects'] = 'Miscellaneous'
-categories['Higher Education'] = 'Miscellaneous'
-categories['Higher Education, Ideas and Rants'] = 'Miscellaneous'
-categories['History'] = 'Miscellaneous'
-categories['Ideas and Rants'] = 'Ideas and Rants'
-categories['Ideas and Rants, Miscellaneous Geek Stuff, Non-Technical Commentary'] = 'Miscellaneous'
-categories['Ideas and Rants, Projects, Reviews'] = 'Ideas and Rants'
-categories['Interesting Links and Resources'] = 'Miscellaneous'
-categories['Interesting Links and Resources, SysAdmin'] = 'Miscellaneous'
-categories['Miscellaneous Geek Stuff'] = 'Miscellaneous'
-categories['Miscellaneous Geek Stuff, SysAdmin'] = 'SysAdmin'
-categories['Miscellaneous Geek Stuff, Uncategorized'] = 'Miscellaneous'
-categories['Non-Technical Commentary'] = 'Miscellaneous'
-categories['opensource'] = 'Miscellaneous'
-categories['Personal'] = 'Miscellaneous'
-categories['Personal, Projects'] = 'Projects'
-categories['PHP EMS Tools'] = 'Projects'
-categories['PHPsa, Projects'] = 'Projects'
-categories['Projects'] = 'Projects'
-categories['Projects, Reviews'] = 'Projects'
-categories['Projects, Reviews, Uncategorized'] = 'Projects'
-categories['Projects, SysAdmin, Uncategorized'] = 'Projects'
-categories['Projects, Tech HowTos'] = 'Tech HowTos'
-categories['Puppet'] = 'Puppet'
-categories['Puppet, SysAdmin'] = 'Puppet'
-categories['SysAdmin, Tech HowTos'] = 'Tech HowTos'
-categories['SysAdmin, Uncategorized'] = 'SysAdmin'
-categories['Tech News'] = 'Miscellaneous'
-categories['Uncategorized'] = 'Miscellaneous'
-categories['Vehicles'] = 'Miscellaneous'
-categories['Android'] = 'Miscellaneous'
-categories['Links'] = 'Miscellaneous'
-categories['Reviews'] = 'Miscellaneous'
+categories = {
+    'android': 'Miscellaneous',
+    'EMS, Non-Technical Commentary': 'Miscellaneous',
+    'EMS, Personal': 'Miscellaneous',
+    'EMS, Projects': 'Miscellaneous',
+    'Higher Education': 'Miscellaneous',
+    'Higher Education, Ideas and Rants': 'Miscellaneous',
+    'History': 'Miscellaneous',
+    'Ideas and Rants': 'Ideas and Rants',
+    'Ideas and Rants, Miscellaneous Geek Stuff, Non-Technical Commentary': 'Miscellaneous',
+    'Ideas and Rants, Projects, Reviews': 'Ideas and Rants',
+    'Interesting Links and Resources': 'Miscellaneous',
+    'Interesting Links and Resources, SysAdmin': 'Miscellaneous',
+    'Miscellaneous Geek Stuff': 'Miscellaneous',
+    'Miscellaneous Geek Stuff, SysAdmin': 'SysAdmin',
+    'Miscellaneous Geek Stuff, Uncategorized': 'Miscellaneous',
+    'Non-Technical Commentary': 'Miscellaneous',
+    'opensource': 'Miscellaneous',
+    'Personal': 'Miscellaneous',
+    'Personal, Projects': 'Projects',
+    'PHP EMS Tools': 'Projects',
+    'PHPsa, Projects': 'Projects',
+    'Projects': 'Projects',
+    'Projects, Reviews': 'Projects',
+    'Projects, Reviews, Uncategorized': 'Projects',
+    'Projects, SysAdmin, Uncategorized': 'Projects',
+    'Projects, Tech HowTos': 'Tech HowTos',
+    'Puppet': 'Puppet',
+    'Puppet, SysAdmin': 'Puppet',
+    'SysAdmin, Tech HowTos': 'Tech HowTos',
+    'SysAdmin, Uncategorized': 'SysAdmin',
+    'Tech News': 'Miscellaneous',
+    'Uncategorized': 'Miscellaneous',
+    'Vehicles': 'Miscellaneous',
+    'Android': 'Miscellaneous',
+    'Links': 'Miscellaneous',
+    'Reviews': 'Miscellaneous',
+}
 
 def translate_identifier(lexers, overrides, i, fname=None):
     """
@@ -89,9 +94,9 @@ def translate_identifier(lexers, overrides, i, fname=None):
         return lexers[i].lower()
     if i in overrides:
         return overrides[i]
-    sys.stderr.write("Unknown lexer, leaving as-is: %s" % i)
+    sys.stderr.write(f"Unknown lexer, leaving as-is: {i}")
     if fname is not None:
-        sys.stderr.write(" in file %s" % fname)
+        sys.stderr.write(f" in file {fname}")
     sys.stderr.write("\n")
     return i
 
@@ -107,9 +112,7 @@ def get_lexers_list():
 
 def translate_category(i):
     """ translate a category name """
-    if i in categories:
-        return categories[i]
-    return i
+    return categories[i] if i in categories else i
 
 lang_re = re.compile(r'^~~~~ {lang="([^"]+)"}$')
 cat_re = re.compile(r'^Category: (.+)$')
@@ -124,12 +127,12 @@ for f in files:
         for line in fh:
             m = cat_re.match(line)
             if m is not None:
-                line = ("Category: %s\n" % translate_category(m.group(1).strip()))
+                line = "Category: %s\n" % translate_category(m[1].strip())
                 content = content + line
                 continue
             m = lang_re.match(line)
             if m is not None:
-                line = ("~~~~{.%s}\n" % translate_identifier(lexers, overrides, m.group(1), fname=f))
+                line = "~~~~{.%s}\n" % translate_identifier(lexers, overrides, m[1], fname=f)
                 inpre = True
                 count = count + 1
             elif inpre and line.strip() == "~~~~":
